@@ -1,5 +1,10 @@
 # strzelnica-Teensy
 
+Teensy jako arduino:
+https://www.pjrc.com/teensy/td_download.html wtyczka do arduino
+
+
+
 Biblioteka audio
 https://hackaday.com/2014/09/30/the-teensy-audio-library/
 https://www.pjrc.com/teensy/td_libs_Audio.html
@@ -20,3 +25,5 @@ https://stackoverflow.com/questions/36894586/how-do-i-remove-blank-space-from-fi
 https://github.com/PaulStoffregen/Audio/blob/master/examples/WavFilePlayer/WavFilePlayer.ino gotowiec
 
 https://www.reddit.com/r/arduino/comments/3qygp2/how_to_drive_a_35_mm_jack/cwjt6xz?utm_source=share&utm_medium=web2x&context=3 wzmacniacz
+
+https://www.pjrc.com/teensy/td_libs.html biblioteki rozszerzenia
