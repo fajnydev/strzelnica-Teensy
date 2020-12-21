@@ -18,3 +18,5 @@ https://fluxworkshop.com/products/bfaa100012-sd-module-lc-blue modul sd
 https://majsterkowo.pl/arduino-jako-odtwarzacz-audio/?fbclid=IwAR0HchEp5gZIIBgqg8ME3ZCD8FFU8VF3pODgldetK8HswZvixeNZp2EnDjs instrukcja arduino
 https://stackoverflow.com/questions/36894586/how-do-i-remove-blank-space-from-file-names przygotowanie plików 
 https://github.com/PaulStoffregen/Audio/blob/master/examples/WavFilePlayer/WavFilePlayer.ino gotowiec
+
+https://www.reddit.com/r/arduino/comments/3qygp2/how_to_drive_a_35_mm_jack/cwjt6xz?utm_source=share&utm_medium=web2x&context=3 wzmacniacz
