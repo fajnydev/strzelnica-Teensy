@@ -8,7 +8,13 @@ https://www.pjrc.com/store/teensy3_audio.html
 
 Biblioteka pliki
 https://forum.pjrc.com/threads/16758-Teensy-3-MicroSD-guide
-https://www.pjrc.com/teensy/gui/?info=AudioPlaySdWav (po prawo panel)
+
 
 Mikroukład
 https://www.pjrc.com/store/teensy31.html
+
+
+https://fluxworkshop.com/products/bfaa100012-sd-module-lc-blue modul sd 
+https://majsterkowo.pl/arduino-jako-odtwarzacz-audio/?fbclid=IwAR0HchEp5gZIIBgqg8ME3ZCD8FFU8VF3pODgldetK8HswZvixeNZp2EnDjs instrukcja arduino
+https://stackoverflow.com/questions/36894586/how-do-i-remove-blank-space-from-file-names przygotowanie plików 
+https://github.com/PaulStoffregen/Audio/blob/master/examples/WavFilePlayer/WavFilePlayer.ino gotowiec
