@@ -11,7 +11,7 @@ https://www.pjrc.com/teensy/td_libs_Audio.html
 https://github.com/PaulStoffregen/Audio
 https://www.pjrc.com/store/teensy3_audio.html
 
-Biblioteka pliki
+Biblioteka pliki sd
 https://forum.pjrc.com/threads/16758-Teensy-3-MicroSD-guide
 
 
