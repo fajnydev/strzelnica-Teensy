@@ -31,6 +31,8 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
+#include <Bounce.h>
+
 AudioPlaySdWav           playWav1;
 // Use one of these 3 output types: Digital I2S, Digital S/PDIF, or Analog DAC
 //AudioOutputI2S           audioOutput;
@@ -42,6 +44,16 @@ AudioControlSGTL5000     sgtl5000_1;
 
 #define SD_FILES_COUNTER 1077
 int randNumber;
+
+// This code turns a led on/off through a debounced button
+// like on the circuit indicated here: http://arduino.cc/en/Tutorial/Button
+#define BUTTON 2
+#define LEDB 23
+#define LEDR 22
+#define LEDG 21
+
+// Instantiate a Bounce object with a 5 millisecond debounce time
+Bounce bouncer = Bounce( BUTTON,5 ); 
 
 // Use these with the Teensy Audio Shield
 //#define SDCARD_CS_PIN    10
@@ -79,6 +91,11 @@ void setup() {
   // different seed numbers each time the sketch runs.
   // randomSeed() will then shuffle the random function.
   randomSeed(analogRead(0));
+
+  pinMode(BUTTON,INPUT);
+  pinMode(LEDG,OUTPUT);
+  pinMode(LEDR,OUTPUT);
+  pinMode(LEDB,OUTPUT);
 }
 
 void playFile(const char *filename)
@@ -102,9 +119,8 @@ void playFile(const char *filename)
     // sgtl5000_1.volume(vol);
   }
 }
-
-
-void loop() {
+void playRandom()
+{
   //assuming there could be system files like desktop.ini - decreasing by 3
   randNumber = random(1, SD_FILES_COUNTER-3);
   char str[128];
@@ -112,6 +128,30 @@ void loop() {
   //sprintf(str, "hello %s", "world");
   snprintf(str, 128, "S%d.WAV",  randNumber);
   playFile(str);  // filenames are always uppercase 8.3 format
-  delay(500);
+  
+  delay(200);
+    digitalWrite(LEDR, LOW );
+   digitalWrite(LEDG, HIGH );
+}
+
+void loop() {
+
+ // Update the debouncer
+  bouncer.update ( );
+ 
+ // Get the update value
+ int value = bouncer.read();
+
+ // Turn on or off the LED
+ if ( value == HIGH) {
+  
+ } else {
+    digitalWrite(LEDG, LOW );
+    digitalWrite(LEDR, HIGH );
+   playRandom(); 
+ }
+
+  
+
  
 }
