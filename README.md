@@ -49,4 +49,6 @@ https://github.com/PaulStoffregen/Audio/blob/master/examples/WavFilePlayer/WavFi
 ### Jakiś pomysł na wzmacniacz
 https://www.reddit.com/r/arduino/comments/3qygp2/how_to_drive_a_35_mm_jack/cwjt6xz?utm_source=share&utm_medium=web2x&context=3
 
+### Dźwięki w folderach np. cel1, cel2 ...
+https://forum.arduino.cc/index.php?topic=367844.0
 
