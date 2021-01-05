@@ -3,6 +3,9 @@
 ## Mikroukład teensy 3.1
 https://www.pjrc.com/store/teensy31.html
 
+![alt text](https://www.pjrc.com/teensy/teensy31_front_pinout.png)
+![alt text](https://www.pjrc.com/teensy/teensy31_back_pinout.png)
+
 ## Lista bibliotek do Teensy
 https://www.pjrc.com/teensy/td_libs.html
 
