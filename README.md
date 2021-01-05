@@ -16,7 +16,8 @@ https://www.pjrc.com/teensy/td_download.html wtyczka do arduino, najpierw wgrywa
 * https://www.pjrc.com/store/teensy3_audio.html
 
 ## Biblioteka pliki sd
-https://forum.pjrc.com/threads/16758-Teensy-3-MicroSD-guide
+* https://forum.pjrc.com/threads/16758-Teensy-3-MicroSD-guide
+* może się przydać też https://mb-raw.blogspot.com/2017/07/teensy-tutorial-sd-card.html?m=1
 
 ### Modul SD (narazie jest microsd bo cos wiring nie dzialal- sprawdzic po sformatowaniu karty bo to moze nie wiring tylko formatowanie i jednak juz dziala)
 https://fluxworkshop.com/products/bfaa100012-sd-module-lc-blue 
