@@ -47,6 +47,8 @@ Get-ChildItem -File | Rename-Item -NewName { $_.Name -replace '\)','' }
 * Verify-> Upload i powinno działać
 * jak coś tu źródło https://stackoverflow.com/questions/36894586/how-do-i-remove-blank-space-from-file-names 
 
+Dlaczego nie listuję plików na karcie z poziomu kodu? Zapytaj ziomków od arduino co tam naodpieprzali, nie robię tego, powołuję się na klauzulę sumienia, może kiedyś znajdę czas //todo w kodzie jakis sampel dodałem sprawdz i usun ten komentarz
+
 ## Wzór kodu źródłowego (punkt wyjściowy)
 https://github.com/PaulStoffregen/Audio/blob/master/examples/WavFilePlayer/WavFilePlayer.ino 
 
