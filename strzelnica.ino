@@ -1,59 +1,64 @@
 // Teensyduino Shooting Range
-//
-//
 
-// Tu podłączam do projektu biblioteki z potrzebnymi funkcjami 
 #include <Audio.h>
 #include <Wire.h>
+
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
 
-#include <Bounce.h> // To jest biblioteka do DeBauncingu - kiedy drganie mechaniczne styków przycisku wyprzedza taktowanie procesora bywa, że jedno kliknięcie jest rozpoznawane jako kilka (prawdopodobnie nas jeszcze nie dotyczy, ale zawsze to się robi, zakładając, że zaraz zacznie)
+#include <Bounce.h> 
 
-//Tu inicjalizuję składniki dźwięku, mówię czego będę używał i niech już będzie gotowe później
 AudioPlaySdWav           playWav1;
 AudioOutputAnalog        audioOutput; // Audio as DAC here
 AudioConnection          patchCord1(playWav1, 0, audioOutput, 0);
 AudioConnection          patchCord2(playWav1, 1, audioOutput, 1);
 
-#define BUTTON_1 2 //Guzika 1 nasłuchujemy na PIN 2
-#define BUTTON_2 3 //Guzika 2 nasłuchujemy na PIN 3
-#define BUTTON_3 4 //Guzika 3 nasłuchujemy na PIN 4
+#define BUTTON_1 0 //Guzika 1 nasłuchujemy na PIN 0
+#define BUTTON_2 1 //Guzika 2 nasłuchujemy na PIN 1
+#define BUTTON_3 2 //Guzika 3 nasłuchujemy na PIN 2
+#define BUTTON_4 3 //Guzika 4 nasłuchujemy na PIN 3
+#define BUTTON_5 4 //Guzika 5 nasłuchujemy na PIN 4
+#define BUTTON_6 5 //Guzika 6 nasłuchujemy na PIN 5
+
+#define BUTTON_RESET 14 //Guzika RESET nasłuchujemy na PIN 14
+#define BUTTON_HARDER 15 //Guzika TRUDNIEJ nasłuchujemy na PIN 15
+
+
 // Instantiate a Bounce object with a 5 millisecond debounce time
-// This code turns a led on/off through a debounced button
+// This code turns a target hit through a debounced button
 // like on the circuit indicated here: http://arduino.cc/en/Tutorial/Button
-Bounce bouncer_1 = Bounce( BUTTON_1, 5 ); 
-Bounce bouncer_2 = Bounce( BUTTON_2, 5 ); 
-Bounce bouncer_3 = Bounce( BUTTON_3, 5 ); 
+Bounce bouncer_1 = Bounce( BUTTON_1, 50 ); 
+Bounce bouncer_2 = Bounce( BUTTON_2, 50 ); 
+Bounce bouncer_3 = Bounce( BUTTON_3, 50 ); 
+Bounce bouncer_4 = Bounce( BUTTON_4, 50 ); 
+Bounce bouncer_5 = Bounce( BUTTON_5, 50 ); 
+Bounce bouncer_6 = Bounce( BUTTON_6, 50 ); 
+Bounce bouncer_BUTTON_RESET  = Bounce(BUTTON_RESET , 300);
+Bounce bouncer_BUTTON_HARDER = Bounce(BUTTON_HARDER, 300);
 
-#define LED_1_B 23 //Kolor Niebieski Guzika 1 podajemy na PIN 23
-#define LED_1_R 22 //Kolor Czerwony Guzika 1 podajemy na PIN 22
-#define LED_1_G 21 //Kolor Zielony Guzika 1 podajemy na PIN 21
+#define LED_1 23 //Napięcie do Led1 podajemy na PIN 23
+#define LED_2 22 //Napięcie do Led2 podajemy na PIN 22
+#define LED_3 21 //Napięcie do Led3 podajemy na PIN 21
+#define LED_4 20 //Napięcie do Led4 podajemy na PIN 20
+#define LED_5 19 //Napięcie do Led5 podajemy na PIN 19
+#define LED_6 18 //Napięcie do Led6 podajemy na PIN 18
 
-#define LED_2_B 20 //Kolor Niebieski Guzika 2 podajemy na PIN 20
-#define LED_2_R 19 //Kolor Czerwony Guzika 2 podajemy na PIN 19
-#define LED_2_G 18 //Kolor Zielony Guzika 2 podajemy na PIN 18
-
-#define LED_3_B 17 //Kolor Niebieski Guzika 3 podajemy na PIN 17
-#define LED_3_R 16 //Kolor Czerwony Guzika 3 podajemy na PIN 16
-#define LED_3_G 15 //Kolor Zielony Guzika 3 podajemy na PIN 15  
-
-
-// The SD card may connect to different pins, depending on the
-// hardware you are using.  Uncomment or configure the SD card
-// pins to match your hardware.
+// The SD card may connect on those specific pins only without additional configuration
 #define SDCARD_CS_PIN    10
 #define SDCARD_MOSI_PIN  11
 #define SDCARD_SCK_PIN   13
 
-// Mówię, ile plików jest na karcie SD - docelowo można o tą liczbę odpytywać kartę SD, https://arduino.stackexchange.com/questions/54339/arduino-sd-count-files-and-open-last-how-to tu gość to robi przy okazji
-#define SD_FILES_COUNTER 1077
 
-//Tu uprzedzam, że będę używał losowego numeru do .. losowania plików
+#define SD_FOLDER_SIZE_COUNTER 6
 int randNumber;
 
-//Ten blok uruchamia się 1 raz - podczas włączenia urządzenia
+uint8_t ledLightMask = 0;
+
+bool defaultMode=true;
+int timeToChangeTarget = 5000;// co 3 sekundy zmiana celu
+int lastResetTime = millis();
+
 void setup() {
   Serial.begin(9600); //to jest dla karty SD - łączymy się do niej SPI
 
@@ -66,8 +71,8 @@ void setup() {
   if (!(SD.begin(SDCARD_CS_PIN))) {
     // stop here, but print a message repetitively
     while (1) {
-      Serial.println("Unable to access the SD card");
-      delay(1500);
+      Serial.println("Unable to access the SD card! is card inserted? check wiring? chipset pin usage set? is CPU frequency 24MHz(Tools->CPU speed)?");
+      delay(1000);
     }
   }
   // if analog input pin 0 is unconnected, random analog
@@ -76,114 +81,206 @@ void setup() {
   // randomSeed() will then shuffle the random function.
   randomSeed(analogRead(0));
 
-  // Mówię tylko, że na pinach BUTTON będziemy sprawdzać podawanie lub nie napięcia
-  // Mówię, że guziki mają być "normalnie wysokie" czyli dają napięcie dopóki ich nie wdusimy (wtedy zwiera do GND i nie dają napięcia)
+  // Na pinach BUTTON będziemy sprawdzać podawanie lub nie napięcia
+  // Guziki mają być "normalnie wysokie" czyli dają napięcie dopóki ich nie wdusimy (wtedy zwiera do GND i nie dają napięcia). Można je zwierać do masy i będzie OK, rezystor podciągający jest w czipie
   // The pullup resistors are useful when connecting pushbuttons that can connect the pin to ground (low), but when the button is not pressed there is no connection at all. The pullup resistor causes the voltage to be high when nothing is connected.
   // A brief delay may be needed between pinMode() configuring INPUT_PULLUP mode and digitalRead() reporting the unconnected pin as HIGH. The pullup resistor raises the voltage slowly, depending on capacitance of any circuitry attached, plus the capacitance of the pin and breadboard or wires. Usually delayMicroseconds(10) is plenty.
   pinMode(BUTTON_1,INPUT_PULLUP); 
   pinMode(BUTTON_2,INPUT_PULLUP); 
   pinMode(BUTTON_3,INPUT_PULLUP); 
+  pinMode(BUTTON_4,INPUT_PULLUP); 
+  pinMode(BUTTON_5,INPUT_PULLUP); 
+  pinMode(BUTTON_6,INPUT_PULLUP); 
+  pinMode(BUTTON_RESET , INPUT_PULLUP);
+  pinMode(BUTTON_HARDER, INPUT_PULLUP);
+  delayMicroseconds(10);
 
-  //Mówię tylko, że na pinach LED będziemy sterować podawaniem lub nie napięcia
-  pinMode(LED_1_G,OUTPUT);
-  pinMode(LED_1_R,OUTPUT);
-  pinMode(LED_1_B,OUTPUT);
-  
-  pinMode(LED_2_G,OUTPUT);
-  pinMode(LED_2_R,OUTPUT);
-  pinMode(LED_2_B,OUTPUT);
-  
-  pinMode(LED_3_G,OUTPUT);
-  pinMode(LED_3_R,OUTPUT);
-  pinMode(LED_3_B,OUTPUT);
+  //Na pinach LED będziemy sterować podawaniem lub nie napięcia
+  pinMode(LED_1,OUTPUT);
+  pinMode(LED_2,OUTPUT);
+  pinMode(LED_3,OUTPUT);
+  pinMode(LED_4,OUTPUT);
+  pinMode(LED_5,OUTPUT);
+  pinMode(LED_6,OUTPUT);
 }
 
 void playFile(const char *filename)
 {
   Serial.print("Playing file: ");
   Serial.println(filename);
+  playWav1.play(filename);  // Start playing the file.  This sketch continues to run while the file plays.
+  delay(5);  // A brief delay for the library read WAV info
 
-  // Start playing the file.  This sketch continues to
-  // run while the file plays.
-  playWav1.play(filename);
-
-  // A brief delay for the library read WAV info
-  delay(5);
-
-  // Simply wait for the file to finish playing.
-  while (playWav1.isPlaying()) {
-    // uncomment these lines if you audio shield
-    // has the optional volume pot soldered
-    //float vol = analogRead(15);
-    //vol = vol / 1024;
-    // sgtl5000_1.volume(vol);
-  }
+  
 }
 
-void playRandomSound()
+void playRandomSound(int folderNumber)
 {
-  //assuming there could be system files like desktop.ini - decreasing by 1
-  randNumber = random(1, SD_FILES_COUNTER-1);
+  randNumber = random(1, SD_FOLDER_SIZE_COUNTER);
   char str[128];
 
   //sprintf(str, "hello %s", "world");
-  snprintf(str, 128, "S%d.WAV",  randNumber);
+  snprintf(str, 128, "/T%d/S%d.WAV", folderNumber, randNumber);
   playFile(str);  // filenames are always uppercase 8.3 format
   //  Analog DAC - Connect the DAC pin to an amplified speaker
   //  http://www.pjrc.com/teensy/gui/?info=AudioOutputAnalog
-  delay(200); // teoretycznie odegranie dźwięku i ten delay już są debounncingiem, ale zostawmy go, dojdą guziki np. tryb gry to sie przyda
+// Simply wait for the file to finish playing. jakbys chcial zeby kolejny strzal(dzwiek) nie zatrzymywal poprzedniego dzwieku. To zamula gre, narazie wylaczam  //
+
+ while (playWav1.isPlaying()) { };
+  //   // uncomment these lines if you audio shield  //   // has the optional volume pot soldered  //   //float vol = analogRead(15);  //   //vol = vol / 1024;  //   // sgtl5000_1.volume(vol);  // }
+ledLightMask |= 0b00000000;
+updateLedsAsInMask();
+
+if(!defaultMode){delay(random(700, timeToChangeTarget));}
+}
+void playWelcomeSound(int folderNumber)
+{
+  char str[128];
+
+  //sprintf(str, "hello %s", "world");
+  snprintf(str, 128, "W%d.WAV", folderNumber);
+  playFile(str);  // filenames are always uppercase 8.3 format
+  //  Analog DAC - Connect the DAC pin to an amplified speaker
+  //  http://www.pjrc.com/teensy/gui/?info=AudioOutputAnalog
+}
+
+void updateLedsAsInMask()
+{ 
+  if (__builtin_ctz(ledLightMask)+1 == 1) {
+    digitalWrite(LED_1, HIGH );
+  }else {digitalWrite(LED_1, LOW );}
+
+  if (__builtin_ctz(ledLightMask)+1 == 2) {
+
+    digitalWrite(LED_2, HIGH );
+  }else {digitalWrite(LED_2, LOW );}
+
+  if (__builtin_ctz(ledLightMask)+1 == 3) {
+
+    digitalWrite(LED_3, HIGH );
+  }else {digitalWrite(LED_3, LOW );}
+
+  if (__builtin_ctz(ledLightMask)+1 == 4) {
+
+    digitalWrite(LED_4, HIGH );
+  }else{digitalWrite(LED_4, LOW );}
+
+  if (__builtin_ctz(ledLightMask)+1 == 5) {
+    digitalWrite(LED_5, HIGH );
+  } else {digitalWrite(LED_5, LOW );}
+  if (__builtin_ctz(ledLightMask)+1 == 6) {
+    digitalWrite(LED_6, HIGH );
+  }else {digitalWrite(LED_6, LOW );}
+  
+  if(ledLightMask == 0b00000000){
+    digitalWrite(LED_6, LOW );
+    digitalWrite(LED_5, LOW );
+    digitalWrite(LED_4, LOW );
+    digitalWrite(LED_3, LOW );
+    digitalWrite(LED_2, LOW );
+    digitalWrite(LED_1, LOW );
+  }
+
+  if(ledLightMask == 0b00111111){
+    digitalWrite(LED_1, HIGH );
+    digitalWrite(LED_2, HIGH );
+    digitalWrite(LED_3, HIGH );
+    digitalWrite(LED_4, HIGH );
+    digitalWrite(LED_5, HIGH );
+    digitalWrite(LED_6, HIGH );
+
+  }
+}
+
+void reset()
+{
+    ledLightMask |= 0b00111111;
+    Serial.println(__builtin_ctz(ledLightMask)+1);
+    updateLedsAsInMask();
+    timeToChangeTarget = 5000;
+    lastResetTime = millis();
+}
+
+void hitDone(){
+if (defaultMode){//all works
+ledLightMask |= 0b00111111;
+updateLedsAsInMask();
+} else { //reload
+lastResetTime = millis();
+ledLightMask |= 0b00000000;
+ledLightMask = (uint8_t) (1u << (uint8_t)random(0, 3));//tu zmien na 6 ! do testow starczy 3
+updateLedsAsInMask();
+playWelcomeSound(__builtin_ctz(ledLightMask)+1);
+}
 }
 
 //ta funkcja wywołuje się w kółko, jak skończy raz leci drugi i tak zawsze
 void loop() {
 
+
+  if(millis()-lastResetTime>(unsigned long)timeToChangeTarget){
+    hitDone();
+  }
+
  // Update the debouncer
-  bouncer_1.update ( );
-  bouncer_2.update ( );
-  bouncer_3.update ( );
+  bouncer_1.update();
+  bouncer_2.update();
+  bouncer_3.update();
+  bouncer_4.update();
+  bouncer_5.update();
+  bouncer_6.update();
+  bouncer_BUTTON_RESET.update();
+  bouncer_BUTTON_HARDER.update();
  
  // Get the update value
  int value_1 = bouncer_1.read();
  int value_2 = bouncer_2.read();
  int value_3 = bouncer_3.read();
+ int value_4 = bouncer_4.read();
+ int value_5 = bouncer_5.read();
+ int value_6 = bouncer_6.read();
+ int value_RESET = bouncer_BUTTON_RESET.read();
+ int value_HARDER = bouncer_BUTTON_HARDER.read();
 
- //jeśli trzebaby było tez odtwarzać z innego folderu dźwięki (per guzik) można albo a) skopiować funkcję playRandomSound() i zrobić playRandomSound_1() playRandomSound_2() itd i w każdej z nich obsługiwać tylko jeden folder(uwaga zmienna SD_FILES_COUNTER też do powielenia) albo można przekazywać w parametrze funkcji nazwę folderu playRandomSound("3") co jest bardziej eleganckie ale nieco trudniejsze
- if ( value_1 == HIGH) {
-  //jeśli przycisk 1 jest niewduszony
- } else {
-  //jeśli przycisk 1 jest wduszony zapalam odpowiednią diodę czerwona
-    digitalWrite(LED_1_G, LOW );
-    digitalWrite(LED_1_R, HIGH );
-    playRandomSound(); 
-    //zapalam odpowiednie diody w kolorze zielonym (reset)
-  digitalWrite(LED_1_R, LOW );
-  digitalWrite(LED_1_G, HIGH );
- }
 
- //jeśli trzebaby było tez odtwarzać z innego folderu dźwięki (per guzik) można albo a) skopiować funkcję playRandomSound() i zrobić playRandomSound_1() playRandomSound_2() itd i w każdej z nich obsługiwać tylko jeden folder(uwaga zmienna SD_FILES_COUNTER też do powielenia) albo można przekazywać w parametrze funkcji nazwę folderu playRandomSound("3") co jest bardziej eleganckie ale nieco trudniejsze
- if ( value_2 == HIGH) {
-  //jeśli przycisk 2 jest niewduszony
- } else {
-  //jeśli przycisk 2 jest wduszony zapalam odpowiednią diodę czerwona
-    digitalWrite(LED_2_G, LOW );
-    digitalWrite(LED_2_R, HIGH );
-    playRandomSound(); 
-    //zapalam odpowiednie diody w kolorze zielonym (reset)
-  digitalWrite(LED_2_R, LOW );
-  digitalWrite(LED_2_G, HIGH );
- }
+ if ( value_1 == LOW && (ledLightMask == 0b00111111 ||  (__builtin_ctz(ledLightMask)+1 == 1))) {
+  Serial.println("jeden");
+    playRandomSound(1); 
 
-//jeśli trzebaby było tez odtwarzać z innego folderu dźwięki (per guzik) można albo a) skopiować funkcję playRandomSound() i zrobić playRandomSound_1() playRandomSound_2() itd i w każdej z nich obsługiwać tylko jeden folder(uwaga zmienna SD_FILES_COUNTER też do powielenia) albo można przekazywać w parametrze funkcji nazwę folderu playRandomSound("3") co jest bardziej eleganckie ale nieco trudniejsze
- if ( value_3 == HIGH) {
-  //jeśli przycisk 3 jest niewduszony
- } else {
-  //jeśli przycisk 3 jest wduszony zapalam odpowiednią diodę czerwona
-    digitalWrite(LED_3_G, LOW );
-    digitalWrite(LED_3_R, HIGH );
-    playRandomSound(); 
-    //zapalam odpowiednie diody w kolorze zielonym (reset)
-  digitalWrite(LED_3_R, LOW );
-  digitalWrite(LED_3_G, HIGH );
+    hitDone();
  }
- 
+  if ( value_2 == LOW &&  (ledLightMask == 0b00111111 ||  (__builtin_ctz(ledLightMask)+1 == 2))) {
+    Serial.println("dwa");
+    playRandomSound(2); 
+    hitDone();
+ }
+  if ( value_3 == LOW && (ledLightMask == 0b00111111 ||  (__builtin_ctz(ledLightMask)+1 == 3))) {
+    Serial.println("trzy");
+    playRandomSound(3); 
+    hitDone();
+ }
+  if ( value_4 == LOW && (ledLightMask == 0b00111111 ||  (__builtin_ctz(ledLightMask)+1 == 4))) {
+    playRandomSound(4); 
+    hitDone();
+ }
+  if ( value_5 == LOW && (ledLightMask == 0b00111111 ||  (__builtin_ctz(ledLightMask)+1 == 5))) {
+    playRandomSound(5); 
+    hitDone();
+ }
+  if ( value_6 == LOW && (ledLightMask == 0b00111111 || (__builtin_ctz(ledLightMask)+1 == 6))) {
+     playRandomSound(6); 
+    hitDone();
+ }
+  if ( value_RESET == LOW) {
+      defaultMode = true;
+      timeToChangeTarget = 5000;
+      reset();
+      hitDone();
+ }
+  if ( value_HARDER == LOW) {
+      defaultMode = false;
+      timeToChangeTarget = timeToChangeTarget*0.99;
+      Serial.println(timeToChangeTarget);
+      hitDone();
+ }
 }
